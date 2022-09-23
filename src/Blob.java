@@ -19,10 +19,11 @@ public class Blob {
 		SHA1 = encryptThisString(getFileString(fileName));
 		
 		//creates new file called SHA1
-		File file = new File(SHA1);	
+		File file = new File("objects/" + SHA1);	
+		file.createNewFile();
 		
 		//puts file in objects folder
-		FileWriter fw = new FileWriter("objects/"+ file);
+		FileWriter fw = new FileWriter(file);
 		
 		//copies contents into file
 		fw.write(getFileString(fileName));

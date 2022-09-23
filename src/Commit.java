@@ -12,12 +12,12 @@ public class Commit {
 
 	private Commit parent = null;
 	private Commit next = null;
-	private String pTree = null;
+	private Tree pTree = new Tree
 	private String summary, author, date;
 	private String sha1;
 
 	// constructor
-	public Commit(String fileName, String sum, String auth, Commit p) throws IOException {
+	public Commit(Tree pT, String sum, String auth, Commit p) throws IOException {
 		if (!p.equals(null)) {
 			parent = p;
 			writeParent();
@@ -25,7 +25,7 @@ public class Commit {
 		author = auth;
 		summary = sum;
 		date = getDate();
-		pTree = "objects/" + fileName;
+		pTree = pT;
 		getFileName();
 	}
 
