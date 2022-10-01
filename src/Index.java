@@ -26,7 +26,7 @@ public class Index {
 		//adds blob to index
 		FileWriter fw = new FileWriter(index, true);
 		BufferedWriter bw = new BufferedWriter(fw);
-		bw.write(fileName + " : " + blob.getSHA1());
+		bw.write("blob" + " : " + blob.getSHA1() + " " + fileName);
 		bw.newLine();
 		bw.close();
 	}

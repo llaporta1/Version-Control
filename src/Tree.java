@@ -16,9 +16,9 @@ public class Tree {
 	
 	public Tree (ArrayList<String> pairs, String p) {
 		output="";
-		if (p != null)
+		if (p != "")
 		{
-			output += p + "\n";
+			output += "tree : " + p + "\n";
 		}
 		int i;
 		for(i = 0;i < pairs.size() - 1;i++) {
