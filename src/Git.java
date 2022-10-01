@@ -35,7 +35,8 @@ public class Git {
 		Blob b = new Blob(fileName);
 		
 		//checks if file is repeated
-		if (count != objects.list().length) {
+		int listLen = objects.list().length;
+		if (count != listLen) {
 			count++;
 			//adds to index
 			index.add(fileName, b);

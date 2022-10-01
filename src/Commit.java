@@ -1,7 +1,11 @@
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -10,24 +14,45 @@ import java.util.Date;
 
 public class Commit {
 
-	private Commit parent = null;
-	private Commit next = null;
-	private Tree pTree = new Tree
+	private Commit parent;
+	private Commit next;
+	private ArrayList<String> treeList = new ArrayList<String>();
 	private String summary, author, date;
 	private String sha1;
+	private String sha1Tree;
 
 	// constructor
-	public Commit(Tree pT, String sum, String auth, Commit p) throws IOException {
-		if (!p.equals(null)) {
-			parent = p;
-			writeParent();
-		}
+	public Commit(String sum, String auth, Commit p) throws IOException {
 		author = auth;
 		summary = sum;
 		date = getDate();
-		pTree = pT;
 		getFileName();
-	}
+		String tLineOne = "";
+		Tree tree = new Tree (getTreeList(),tLineOne);
+		sha1Tree = tree.getSha1();
+		if (p != null)
+		{
+			parent = p;
+			writeParent();
+			
+			FileInputStream fstream = new FileInputStream("objects/" + p.getFileName());
+			BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+
+			String strLine = "";
+
+			//Read File Line By Line
+			if ((strLine = br.readLine()) != null)   {
+			  // Print the content on the console - do what you want to do
+				tLineOne += strLine;
+		}
+		}
+		writeFile();
+		        FileWriter fw = new FileWriter("index", false); 
+		        PrintWriter pw = new PrintWriter(fw, false);
+		        pw.flush();
+		        pw.close();
+		        fw.close();
+		}
 
 	// method of reading in from parent
 	// also changes second line to this location
@@ -43,66 +68,29 @@ public class Commit {
 	}
 
 	// getsFileName
-	private void getFileName() {
-		String str = "";
-		ArrayList<String> arr = getContents();
-		for (String s : arr) {
-			if (!s.equals(null)) {
-				str += s;
-			}
+	public String getFileName() {
+		//NOT CHILD!!
+		String fileName = getContentsSHA1();
+		return fileName;
+	}
+	
+	public String getContentsSHA1()
+	{
+		String contents = "";
+		contents += summary + "\n";
+		contents += date + "\n"; //private instance
+		contents += author + "\n";
+		if (parent != null)
+		{
+			contents += parent;
 		}
-		sha1 = encryptThisString(str);
+//		System.out.println("po"+contents);
+		String s = encryptThisString(contents);
+//		System.out.println(s);
+		return s;
 	}
-
-	// writing method
-	public void writeFile() throws IOException {
-		ArrayList<String> arr = getContents();
-		File file = new File(sha1);
-
-		FileWriter fw = new FileWriter("objects/" + file);
-		BufferedWriter bw = new BufferedWriter(fw);
-		for (String s : arr) {
-			if (!s.equals(null)) {
-				bw.write(s);
-			}
-			bw.newLine();
-		}
-		bw.close();
-		fw.close();
-	}
-
-	// gets contents of file
-	private ArrayList<String> getContents() {
-		ArrayList<String> arr = new ArrayList<String>();
-		arr.add(pTree);
-		if (parent != null) {
-			arr.add(parent.getLocation());
-		} else {
-			arr.add(null);
-		}
-		if (next != null) {
-			arr.add(parent.getLocation());
-		} else {
-			arr.add(null);
-		}
-		arr.add(author);
-		arr.add(date);
-		arr.add(summary);
-		return arr;
-	}
-
-	// gets location of commit
-	public String getLocation() {
-		return pTree;
-	}
-
-	// date method
-	private String getDate() {
-		Date date = new Date();
-		return date.toString();
-	}
-
-	// SHA1 method
+//	
+//	// SHA1 method
 	private String encryptThisString(String input) {
 		try {
 			// getInstance() method is called with algorithm SHA-1
@@ -127,11 +115,84 @@ public class Commit {
 			// return the HashText
 			return hashtext;
 		}
-
 		// For specifying wrong message digest algorithms
 		catch (NoSuchAlgorithmException e) {
 			throw new RuntimeException(e);
 		}
 	}
+	
+
+	// writing method
+	public void writeFile() throws IOException {
+		ArrayList<String> arr = getContents();
+		File file = new File(getContentsSHA1());
+
+		FileWriter fw = new FileWriter("objects/" + file);
+		BufferedWriter bw = new BufferedWriter(fw);
+		for (String s : arr) {
+			if (s != null) {
+				bw.write(s);
+			}
+			bw.newLine();
+		}
+		bw.close();
+		fw.close();
+	}
+
+	// gets contents of file
+	private ArrayList<String> getContents() {
+		ArrayList<String> arr = new ArrayList<String>();
+		arr.add(sha1Tree); //how to change to pointer to Tree
+		if (parent != null) {
+			arr.add(parent.getLocation());
+		} else {
+			arr.add(null);
+		}
+		if (next != null) {
+			arr.add(next.getLocation());
+		} else {
+			arr.add(null);
+		}
+		arr.add(author);
+		arr.add(date);
+		arr.add(summary);
+		return arr;
+	}
+
+	// gets location of commit
+	public String getLocation() {
+		return sha1Tree;
+	}
+
+	// date method
+	private String getDate() {
+		Date date = new Date();
+		return date.toString();
+	}
+
+	public ArrayList<String> getTreeList() throws IOException
+	{
+	FileInputStream fstream = new FileInputStream("index");
+	BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+
+	ArrayList<String> treeList = new ArrayList<String>();
+	String strLine = "";
+	String str = "";
+
+	//Read File Line By Line
+	while ((strLine = br.readLine()) != null)   {
+	  // Print the content on the console - do what you want to do
+		treeList.add(strLine);
+	}
+		return treeList;
+	}
 
 }
+
+// read in lines from index file and add to an array list becomes parameter of tree object
+// The Index files will need to be reformatted???- add file names
+// create parent tree like commit structure
+// clear index file
+// test & screenshots
+	
+//*deleted* file1.txt
