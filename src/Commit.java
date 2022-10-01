@@ -28,6 +28,8 @@ public class Commit {
 		date = getDate();
 		getFileName();
 		String tLineOne = "";
+		Tree tree = new Tree (getTreeList(),tLineOne);
+		sha1Tree = tree.getSha1();
 		if (p != null)
 		{
 			parent = p;
@@ -44,8 +46,6 @@ public class Commit {
 				tLineOne += strLine;
 		}
 		}
-		Tree tree = new Tree (getTreeList(),tLineOne);
-		sha1Tree = tree.getSha1();
 		writeFile();
 		        FileWriter fw = new FileWriter("index", false); 
 		        PrintWriter pw = new PrintWriter(fw, false);

@@ -33,14 +33,8 @@ public class Git {
 	public void add(String fileName) throws Exception {
 		//creates new blob in objects folder
 		Blob b = new Blob(fileName);
-		
-		//checks if file is repeated
-		int listLen = objects.list().length;
-		if (count != listLen) {
-			count++;
-			//adds to index
-			index.add(fileName, b);
-		}
+		index.add(fileName, b);
+	
 	}
 	
 	//removes blob from index and objects folder
