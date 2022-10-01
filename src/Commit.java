@@ -28,23 +28,25 @@ public class Commit {
 		date = getDate();
 		getFileName();
 		String tLineOne = "";
+		if (p != null)
+		{
+			FileInputStream fstream = new FileInputStream("objects/" + p.getFileName());
+			BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+
+		String strLine = "";
+
+		//Read File Line By Line
+		if ((strLine = br.readLine()) != null)   {
+		  // Print the content on the console - do what you want to do
+			tLineOne += strLine;
+		}
+		}
 		Tree tree = new Tree (getTreeList(),tLineOne);
 		sha1Tree = tree.getSha1();
 		if (p != null)
 		{
 			parent = p;
-			writeParent();
-			
-			FileInputStream fstream = new FileInputStream("objects/" + p.getFileName());
-			BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
-
-			String strLine = "";
-
-			//Read File Line By Line
-			if ((strLine = br.readLine()) != null)   {
-			  // Print the content on the console - do what you want to do
-				tLineOne += strLine;
-		}
+			writeParent();	
 		}
 		writeFile();
 		        FileWriter fw = new FileWriter("index", false); 
