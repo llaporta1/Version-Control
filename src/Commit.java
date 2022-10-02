@@ -20,6 +20,8 @@ public class Commit {
 	private String summary, author, date;
 	private String sha1;
 	private String sha1Tree;
+	private ArrayList<String> blobList = new ArrayList<String>();
+	private String correctTree;
 
 	// constructor
 	public Commit(String sum, String auth, Commit p) throws IOException {
@@ -188,7 +190,71 @@ public class Commit {
 	}
 		return treeList;
 	}
+	
+	public void editFile(String fileName) throws IOException
+	{
+		addEntry(fileName,"edit");
+	}
+	
+	public void deleteFile(String fileName) throws IOException
+	{
+		addEntry(fileName,"delete");
+		checkTreeForFile(parent.getLocation(),fileName);
+		FileWriter fw = new FileWriter("index", true);
+		BufferedWriter bw = new BufferedWriter(fw);
+		int i;
+		for (i=0; i<blobList.size()-1; i++)
+		{
+			bw.write(blobList.get(i) + "\n");
+		}
+		bw.write(blobList.get(i));
+		bw.close();
+	}
+		
 
+	private void addEntry(String fileName, String directions) throws IOException
+	{
+		FileWriter fw = new FileWriter("index", true);
+		BufferedWriter bw = new BufferedWriter(fw);
+		if (directions.equals("edit"))
+		{
+			bw.write("*edited* " + fileName);
+			bw.newLine();
+			bw.close();
+		}
+		else if (directions.equals("delete"))
+		{
+			bw.write("*deleted* " + fileName);
+			bw.newLine();
+			bw.close();
+		}
+	}
+	
+	public void checkTreeForFile(String tree, String fileName) throws IOException
+	{
+		FileInputStream fstream = new FileInputStream("objects/" + tree);
+		BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+
+		String strLine = "";
+
+		//Read File Line By Line
+		while ((strLine = br.readLine()) != null)   {
+		// Print the content on the console - do what you want to do
+		if (strLine.indexOf("blob") != -1 && strLine.indexOf(fileName) == -1)
+		{
+			blobList.add(strLine);
+		}
+		else if (strLine.indexOf(fileName) != -1)
+		{
+			correctTree = tree;
+			return;
+		}
+		else if (strLine.indexOf("tree") != -1)
+		{
+			checkTreeForFile(strLine.substring(7,47),fileName);
+		}
+		}
+	}
 }
 
 // read in lines from index file and add to an array list becomes parameter of tree object
