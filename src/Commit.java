@@ -2,11 +2,17 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -16,18 +22,22 @@ public class Commit {
 
 	private Commit parent;
 	private Commit next;
-	private ArrayList<String> treeList = new ArrayList<String>();
+	private ArrayList<String> treeList;
 	private String summary, author, date;
 	private String sha1;
 	private String sha1Tree;
-	private ArrayList<String> blobList = new ArrayList<String>();
+	private ArrayList<String> blobList;
 	private String correctTree;
+	private int lineNumber;
+	private String nextTree;
 
 	// constructor
 	public Commit(String sum, String auth, Commit p) throws IOException {
 		author = auth;
 		summary = sum;
 		date = getDate();
+		blobList = new ArrayList<String>();
+		treeList = new ArrayList<String>();
 		getFileName();
 		String tLineOne = "";
 		if (p != null)
@@ -167,6 +177,11 @@ public class Commit {
 	public String getLocation() {
 		return sha1Tree;
 	}
+	
+	public Commit getNext()
+	{
+		return next;
+	}
 
 	// date method
 	private String getDate() {
@@ -186,7 +201,10 @@ public class Commit {
 	//Read File Line By Line
 	while ((strLine = br.readLine()) != null)   {
 	  // Print the content on the console - do what you want to do
-		treeList.add(strLine);
+		if (strLine.indexOf("*deleted*") == -1 && strLine.indexOf(lineNumber) == -1)
+		{
+			treeList.add(strLine);
+		}
 	}
 		return treeList;
 	}
@@ -198,18 +216,82 @@ public class Commit {
 	
 	public void deleteFile(String fileName) throws IOException
 	{
-		addEntry(fileName,"delete");
 		checkTreeForFile(parent.getLocation(),fileName);
-		FileWriter fw = new FileWriter("index", true);
+		updateTree(getLocation());
+		FileWriter fw = new FileWriter("objects/" + getLocation(), true);
 		BufferedWriter bw = new BufferedWriter(fw);
 		int i;
+		if (blobList.size()>0)
+		{
 		for (i=0; i<blobList.size()-1; i++)
 		{
 			bw.write(blobList.get(i) + "\n");
 		}
 		bw.write(blobList.get(i));
 		bw.close();
+		}
+		addEntry(fileName, "delete");
 	}
+	public void updateTree(String tree) throws IOException
+	{	
+		File inputFile = new File("objects/" + tree);
+		File tempFile = new File("myTempFile.txt");
+
+		BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+		BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+
+		String currentLine;
+
+		while((currentLine = reader.readLine()) != null) {
+		    // trim newline when comparing with lineToRemove
+		    String trimmedLine = currentLine.trim();
+		    if(trimmedLine != null && trimmedLine.indexOf("tree")!= -1) continue;
+		    writer.write(currentLine + System.getProperty("line.separator"));
+		}
+		writer.close(); 
+		reader.close(); 
+		tempFile.renameTo(inputFile);
+//		File inputFile = new File("objects/" + tree);
+//		File tempFile = new File("myTempFile.txt");
+//
+//		BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+//		BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+//		
+//		String currentLine;
+//		while((currentLine = br.readLine()) != null){
+//			String trimmedLine = currentLine.trim();
+//		    if(trimmedLine.equals(removeID)){
+//		            currentLine = "";
+//		    }
+//		    bw.write(currentLine + System.getProperty("line.separator"));
+//
+//		}
+//		bw.close();
+//		boolean delete = f.delete();
+//		boolean b = temp.renameTo(f);
+	}	
+//		
+//		File inputFile = new File("objects/" + tree);
+//		File tempFile = new File("myTempFile.txt");
+//
+//		BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+//		BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+//
+//		int i=0;
+//		String lineToRemove = "bbb";
+//		String currentLine;
+//
+//		while((currentLine = reader.readLine()) != null) {
+//			i++;
+//		    if(i!=line)
+//		    {
+//		    	writer.write(currentLine);
+//		    }
+//		}
+//		writer.close(); 
+//		reader.close(); 
+//		tempFile.renameTo(inputFile);
+////		inputFile.delete();
 		
 
 	private void addEntry(String fileName, String directions) throws IOException
@@ -239,6 +321,7 @@ public class Commit {
 
 		//Read File Line By Line
 		while ((strLine = br.readLine()) != null)   {
+			lineNumber++;
 		// Print the content on the console - do what you want to do
 		if (strLine.indexOf("blob") != -1 && strLine.indexOf(fileName) == -1)
 		{
@@ -246,15 +329,48 @@ public class Commit {
 		}
 		else if (strLine.indexOf(fileName) != -1)
 		{
-			correctTree = tree;
+			addRemainingBlobs(tree,lineNumber);
 			return;
 		}
 		else if (strLine.indexOf("tree") != -1)
 		{
+			nextTree = tree;
 			checkTreeForFile(strLine.substring(7,47),fileName);
 		}
 		}
 	}
+	
+	public void addRemainingBlobs(String tree, int line) throws IOException
+	{
+		FileInputStream fstream = new FileInputStream("objects/" + tree);
+		BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+
+		String strLine = "";
+		int i=0;
+		//Read File Line By Line
+		while ((strLine = br.readLine()) != null)   {
+			i++;
+		// Print the content on the console - do what you want to do
+			if (i > line && strLine.indexOf("blob") != -1)
+			{
+				blobList.add(strLine);
+			}
+	}
+	}
+	
+	private String readFileAsString(String filePath) throws IOException {
+        StringBuffer fileData = new StringBuffer();
+        BufferedReader reader = new BufferedReader(
+                new FileReader(filePath));
+        char[] buf = new char[1024];
+        int numRead=0;
+        while((numRead=reader.read(buf)) != -1){
+            String readData = String.valueOf(buf, 0, numRead);
+            fileData.append(readData);
+        }
+        reader.close();
+        return fileData.toString();
+    }
 }
 
 // read in lines from index file and add to an array list becomes parameter of tree object

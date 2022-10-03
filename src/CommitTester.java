@@ -11,18 +11,19 @@ public class CommitTester {
 		Commit c1 = new Commit("first commit", "Lauren",null);
 		System.out.println(c1.getLocation());
 //		c1.editFile("testFile1.txt");
-//		c1.deleteFile("testFile1.txt");
+//		c1.deleteFile("testFile1.txt"); check that delete is only for files added by previous commits
 		
 		
 		g.add("testFile3.txt");
 		Commit c2 = new Commit("second commit", "Lauren",c1);
 		System.out.println(c2.getLocation());
+//		c2.deleteFile("testFile1.txt");
 	
 		g.add("testFile4.txt");
 		Commit c3 = new Commit("third commit", "Lauren", c2);
 		System.out.println(c3.getLocation());
-		
-		c3.deleteFile("testFile1.txt");
+//		
+		c3.deleteFile("testFile3.txt");
 		
 		
 	}
