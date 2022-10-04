@@ -42,6 +42,7 @@ public class Commit {
 		String tLineOne = "";
 		if (p != null)
 		{
+			parent = p;
 			FileInputStream fstream = new FileInputStream("objects/" + p.getFileName());
 			BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
 
@@ -51,21 +52,22 @@ public class Commit {
 		if ((strLine = br.readLine()) != null)   {
 		  // Print the content on the console - do what you want to do
 			tLineOne += strLine;
+//			System.out.println(tLineOne);
 		}
 		}
 		Tree tree = new Tree (getTreeList(),tLineOne);
 		sha1Tree = tree.getSha1();
 		if (p != null)
 		{
-			parent = p;
 			writeParent();	
 		}
 		writeFile();
-		        FileWriter fw = new FileWriter("index", false); 
-		        PrintWriter pw = new PrintWriter(fw, false);
-		        pw.flush();
-		        pw.close();
-		        fw.close();
+		FileWriter fw = new FileWriter("index", false); 
+		PrintWriter pw = new PrintWriter(fw, false);
+		pw.flush();
+		pw.close();
+		fw.close();
+		 // set head to sha1 of commit
 		}
 
 	// method of reading in from parent
@@ -139,9 +141,10 @@ public class Commit {
 	// writing method
 	public void writeFile() throws IOException {
 		ArrayList<String> arr = getContents();
-		File file = new File(getContentsSHA1());
-
-		FileWriter fw = new FileWriter("objects/" + file);
+		File file = new File("objects/" + getContentsSHA1());
+		file.createNewFile();
+		
+		FileWriter fw = new FileWriter(file);
 		BufferedWriter bw = new BufferedWriter(fw);
 		for (String s : arr) {
 			if (s != null) {
@@ -201,162 +204,159 @@ public class Commit {
 	//Read File Line By Line
 	while ((strLine = br.readLine()) != null)   {
 	  // Print the content on the console - do what you want to do
-		if (strLine.indexOf("*deleted*") == -1 && strLine.indexOf(lineNumber) == -1)
-		{
 			treeList.add(strLine);
-		}
 	}
 		return treeList;
 	}
 	
-	public void editFile(String fileName) throws IOException
-	{
-		addEntry(fileName,"edit");
-	}
-	
-	public void deleteFile(String fileName) throws IOException
-	{
-		checkTreeForFile(parent.getLocation(),fileName);
-		updateTree(getLocation());
-		FileWriter fw = new FileWriter("objects/" + getLocation(), true);
-		BufferedWriter bw = new BufferedWriter(fw);
-		int i;
-		if (blobList.size()>0)
-		{
-		for (i=0; i<blobList.size()-1; i++)
-		{
-			bw.write(blobList.get(i) + "\n");
-		}
-		bw.write(blobList.get(i));
-		bw.close();
-		}
-		addEntry(fileName, "delete");
-	}
-	public void updateTree(String tree) throws IOException
-	{	
-		File inputFile = new File("objects/" + tree);
-		File tempFile = new File("myTempFile.txt");
-
-		BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-		BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
-
-		String currentLine;
-
-		while((currentLine = reader.readLine()) != null) {
-		    // trim newline when comparing with lineToRemove
-		    String trimmedLine = currentLine.trim();
-		    if(trimmedLine != null && trimmedLine.indexOf("tree")!= -1) continue;
-		    writer.write(currentLine + System.getProperty("line.separator"));
-		}
-		writer.close(); 
-		reader.close(); 
-		tempFile.renameTo(inputFile);
-//		File inputFile = new File("objects/" + tree);
-//		File tempFile = new File("myTempFile.txt");
-//
-//		BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-//		BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
-//		
-//		String currentLine;
-//		while((currentLine = br.readLine()) != null){
-//			String trimmedLine = currentLine.trim();
-//		    if(trimmedLine.equals(removeID)){
-//		            currentLine = "";
-//		    }
-//		    bw.write(currentLine + System.getProperty("line.separator"));
-//
+//	public void editFile(String fileName) throws IOException
+//	{
+//		addEntry(fileName,"edit");
+//	}
+//	
+//	public static void deleteFile(String fileName) throws IOException
+//	{
+//		checkTreeForFile(parent.getLocation(),fileName);
+//		updateTree(getLocation());
+//		FileWriter fw = new FileWriter("objects/" + getLocation(), true);
+//		BufferedWriter bw = new BufferedWriter(fw);
+//		int i;
+//		if (blobList.size()>0)
+//		{
+//		for (i=0; i<blobList.size()-1; i++)
+//		{
+//			bw.write(blobList.get(i) + "\n");
 //		}
+//		bw.write(blobList.get(i));
 //		bw.close();
-//		boolean delete = f.delete();
-//		boolean b = temp.renameTo(f);
-	}	
-//		
+//		}
+//		addEntry(fileName, "delete");
+//	}
+//	public static void updateTree(String tree) throws IOException
+//	{	
 //		File inputFile = new File("objects/" + tree);
 //		File tempFile = new File("myTempFile.txt");
 //
 //		BufferedReader reader = new BufferedReader(new FileReader(inputFile));
 //		BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
 //
-//		int i=0;
-//		String lineToRemove = "bbb";
 //		String currentLine;
 //
 //		while((currentLine = reader.readLine()) != null) {
-//			i++;
-//		    if(i!=line)
-//		    {
-//		    	writer.write(currentLine);
-//		    }
+//		    // trim newline when comparing with lineToRemove
+//		    String trimmedLine = currentLine.trim();
+//		    if(trimmedLine != null && trimmedLine.indexOf("tree")!= -1) continue;
+//		    writer.write(currentLine + System.getProperty("line.separator"));
 //		}
 //		writer.close(); 
 //		reader.close(); 
 //		tempFile.renameTo(inputFile);
-////		inputFile.delete();
-		
-
-	private void addEntry(String fileName, String directions) throws IOException
-	{
-		FileWriter fw = new FileWriter("index", true);
-		BufferedWriter bw = new BufferedWriter(fw);
-		if (directions.equals("edit"))
-		{
-			bw.write("*edited* " + fileName);
-			bw.newLine();
-			bw.close();
-		}
-		else if (directions.equals("delete"))
-		{
-			bw.write("*deleted* " + fileName);
-			bw.newLine();
-			bw.close();
-		}
-	}
-	
-	public void checkTreeForFile(String tree, String fileName) throws IOException
-	{
-		FileInputStream fstream = new FileInputStream("objects/" + tree);
-		BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
-
-		String strLine = "";
-
-		//Read File Line By Line
-		while ((strLine = br.readLine()) != null)   {
-			lineNumber++;
-		// Print the content on the console - do what you want to do
-		if (strLine.indexOf("blob") != -1 && strLine.indexOf(fileName) == -1)
-		{
-			blobList.add(strLine);
-		}
-		else if (strLine.indexOf(fileName) != -1)
-		{
-			addRemainingBlobs(tree,lineNumber);
-			return;
-		}
-		else if (strLine.indexOf("tree") != -1)
-		{
-			nextTree = tree;
-			checkTreeForFile(strLine.substring(7,47),fileName);
-		}
-		}
-	}
-	
-	public void addRemainingBlobs(String tree, int line) throws IOException
-	{
-		FileInputStream fstream = new FileInputStream("objects/" + tree);
-		BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
-
-		String strLine = "";
-		int i=0;
-		//Read File Line By Line
-		while ((strLine = br.readLine()) != null)   {
-			i++;
-		// Print the content on the console - do what you want to do
-			if (i > line && strLine.indexOf("blob") != -1)
-			{
-				blobList.add(strLine);
-			}
-	}
-	}
+////		File inputFile = new File("objects/" + tree);
+////		File tempFile = new File("myTempFile.txt");
+////
+////		BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+////		BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+////		
+////		String currentLine;
+////		while((currentLine = br.readLine()) != null){
+////			String trimmedLine = currentLine.trim();
+////		    if(trimmedLine.equals(removeID)){
+////		            currentLine = "";
+////		    }
+////		    bw.write(currentLine + System.getProperty("line.separator"));
+////
+////		}
+////		bw.close();
+////		boolean delete = f.delete();
+////		boolean b = temp.renameTo(f);
+//	}	
+////		
+////		File inputFile = new File("objects/" + tree);
+////		File tempFile = new File("myTempFile.txt");
+////
+////		BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+////		BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+////
+////		int i=0;
+////		String lineToRemove = "bbb";
+////		String currentLine;
+////
+////		while((currentLine = reader.readLine()) != null) {
+////			i++;
+////		    if(i!=line)
+////		    {
+////		    	writer.write(currentLine);
+////		    }
+////		}
+////		writer.close(); 
+////		reader.close(); 
+////		tempFile.renameTo(inputFile);
+//////		inputFile.delete();
+//		
+//
+//	private static void addEntry(String fileName, String directions) throws IOException
+//	{
+//		FileWriter fw = new FileWriter("index", true);
+//		BufferedWriter bw = new BufferedWriter(fw);
+//		if (directions.equals("edit"))
+//		{
+//			bw.write("*edited* " + fileName);
+//			bw.newLine();
+//			bw.close();
+//		}
+//		else if (directions.equals("delete"))
+//		{
+//			bw.write("*deleted* " + fileName);
+//			bw.newLine();
+//			bw.close();
+//		}
+//	}
+//	
+//	public static void checkTreeForFile(String tree, String fileName) throws IOException
+//	{
+//		FileInputStream fstream = new FileInputStream("objects/" + tree);
+//		BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+//
+//		String strLine = "";
+//
+//		//Read File Line By Line
+//		while ((strLine = br.readLine()) != null)   {
+//			lineNumber++;
+//		// Print the content on the console - do what you want to do
+//		if (strLine.indexOf("blob") != -1 && strLine.indexOf(fileName) == -1)
+//		{
+//			blobList.add(strLine);
+//		}
+//		else if (strLine.indexOf(fileName) != -1)
+//		{
+//			addRemainingBlobs(tree,lineNumber);
+//			return;
+//		}
+//		else if (strLine.indexOf("tree") != -1)
+//		{
+//			nextTree = tree;
+//			checkTreeForFile(strLine.substring(7,47),fileName);
+//		}
+//		}
+//	}
+//	
+//	public static void addRemainingBlobs(String tree, int line) throws IOException
+//	{
+//		FileInputStream fstream = new FileInputStream("objects/" + tree);
+//		BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
+//
+//		String strLine = "";
+//		int i=0;
+//		//Read File Line By Line
+//		while ((strLine = br.readLine()) != null)   {
+//			i++;
+//		// Print the content on the console - do what you want to do
+//			if (i > line && strLine.indexOf("blob") != -1)
+//			{
+//				blobList.add(strLine);
+//			}
+//	}
+//	}
 	
 	private String readFileAsString(String filePath) throws IOException {
         StringBuffer fileData = new StringBuffer();
